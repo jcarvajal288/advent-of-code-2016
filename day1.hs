@@ -7,25 +7,28 @@ test1 = "R2, L3"
 test2 = "R2, R2, R2, R2"
 test3 = "R5, L5, R5, R3"
 test4 = "R20, L30"
+test5 = "R8, R4, R4, R8"
 
-findBlocks :: String -> Int
+findBlocks :: String -> IO ()
 findBlocks rawInput = 
-    walkRoute 0 0 'N' (parseInput rawInput)
+    walkRoute 0 0 'N' (parseInput rawInput) []
 
-walkRoute :: Int -> Int -> Char -> [String] -> Int
-walkRoute xSum ySum facing (direction:directions) =
+walkRoute :: Int -> Int -> Char -> [String] -> [(Int, Int)] -> IO ()
+walkRoute xSum ySum facing (direction:directions) locations =
     let 
         newFacing = findNewFacing facing (head direction)
         distance = findDistance facing (head direction) (read (tail direction) :: Int)
     in 
         case facing of 
-            'N' -> walkRoute (xSum + distance) ySum newFacing directions
-            'S' -> walkRoute (xSum + distance) ySum newFacing directions
-            'E' -> walkRoute xSum (ySum + distance) newFacing directions
-            'W' -> walkRoute xSum (ySum + distance) newFacing directions
+            'N' -> walkRoute (xSum + distance) ySum newFacing directions (locations ++ [(xSum, ySum)])
+            'S' -> walkRoute (xSum + distance) ySum newFacing directions (locations ++ [(xSum, ySum)])
+            'E' -> walkRoute xSum (ySum + distance) newFacing directions (locations ++ [(xSum, ySum)])
+            'W' -> walkRoute xSum (ySum + distance) newFacing directions (locations ++ [(xSum, ySum)])
             _ -> error "invalid facing in walkRoute"
-walkRoute xSum ySum _ [] =
-    (abs xSum) + (abs ySum)
+walkRoute xSum ySum _ [] locations = do
+    putStrLn $ show $ (abs xSum) + (abs ySum)
+    putStrLn $ show locations
+    putStrLn $ show $ findVisitTwice locations
 
 findNewFacing :: Char -> Char -> Char
 findNewFacing 'N' 'L' = 'W'
@@ -52,3 +55,26 @@ findDistance x y z = error $ printf "Invalid facing/direction in findDistance: %
 parseInput :: String -> [String]
 parseInput input =
     words $ filter (/=',') input 
+
+findVisitTwice :: [(Int, Int)] -> [(Int, Int)]
+findVisitTwice locations =
+    expandLocations locations
+
+expandLocations :: [(Int, Int)] -> [(Int, Int)]
+expandLocations locations
+    | length locations >= 3 = expandLocations' locations
+    | length locations > 2 = expandLocation (head locations) (last locations)
+    | otherwise = error "length 1 or less in expandLocations"
+    where
+        expandLocations' (currentStop:nextStop:stops) =
+            expandLocation currentStop nextStop ++ expandLocations (nextStop:stops)
+
+
+expandLocation :: (Int, Int) -> (Int, Int) -> [(Int, Int)]
+expandLocation start end 
+    | (fst start) < (fst end) = map (\x -> (x,(snd start))) [(fst start)..(fst end)]
+    | (fst start) > (fst end) = map (\x -> (x,(snd start))) (reverse [(fst start)..(fst end)])
+    | (snd start) < (snd end) = map (\x -> ((fst start),x)) [(snd start)..(snd end)]
+    | (snd start) > (snd end) = map (\x -> ((fst start),x)) (reverse [(snd start)..(snd end)])
+    | otherwise = error "something strange is going on in expand location"
+    
