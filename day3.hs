@@ -1,7 +1,6 @@
 module Day3 where
 
 import System.IO
-import Control.Monad
 
 getTriangles :: FilePath -> IO [String]
 getTriangles path = do
