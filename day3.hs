@@ -1,11 +1,13 @@
 module Day3 where
 
-import System.IO
+import Data.Text (unpack)
+import Data.Text.IO (readFile)
+import Prelude hiding (readFile)
 
 getTriangles :: FilePath -> IO [String]
 getTriangles path = do
     contents <- readFile path
-    let triangles = map read . lines $ contents
+    let triangles = lines $ unpack $contents
     return triangles
 
 countValidTriangles :: IO Int
